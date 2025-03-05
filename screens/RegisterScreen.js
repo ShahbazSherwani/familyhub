@@ -1,15 +1,15 @@
 // screens/RegisterScreen.js
-import React, { useState } from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import React, { useState, useContext } from 'react';
+import { View, StyleSheet } from 'react-native';
 import { TextInput, Button, Title, Paragraph } from 'react-native-paper';
-import { AuthContext } from '../contexts/AuthContext';
+import { AuthContext } from '../contexts/AuthContext'; // Make sure this file exists and exports AuthContext
 
 export default function RegisterScreen({ navigation }) {
+  const { setUser } = useContext(AuthContext);  // Using useContext correctly
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
-  const { setUser } = useContext(AuthContext);
 
   const handleRegister = async () => {
     if (!username || !email || !password) {
@@ -24,8 +24,9 @@ export default function RegisterScreen({ navigation }) {
       });
       const data = await response.json();
       if (response.ok) {
+        setUser(data.user); // Save the registered user in context
         alert('Registration successful');
-        navigation.replace('MainApp');
+        navigation.replace('Main'); // Make sure your navigator has a screen named 'Main'
       } else {
         setErrorMsg(data.msg || data.error || 'Registration failed');
       }
@@ -64,14 +65,6 @@ export default function RegisterScreen({ navigation }) {
       <Button mode="contained" onPress={handleRegister} style={styles.button}>
         Register
       </Button>
-      <Text>Already have an account?</Text>
-            <Button
-              mode="contained"
-              onPress={() => navigation.navigate('Login')}
-              style={styles.button}
-            >
-              Login
-            </Button>
     </View>
   );
 }

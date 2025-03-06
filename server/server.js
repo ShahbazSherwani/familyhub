@@ -5,34 +5,41 @@ const mongoose = require('mongoose');
 const http = require('http');
 const socketIo = require('socket.io');
 const authRoutes = require('./routes/auth');
+const eventRoutes = require('./routes/events');
+const memoryRoutes = require('./routes/memories');
+const challengeRoutes = require('./routes/challenges');
+const locationRoutes = require('./routes/location');
 
 const app = express();
 
-// Middleware
+// Middleware to parse JSON bodies
 app.use(express.json());
 
-// Connect to MongoDB (remove deprecated options if necessary)
+// Connect to MongoDB
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB connected'))
   .catch((err) => console.error('MongoDB connection error:', err));
 
-// Routes
+// API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/events', eventRoutes);
+app.use('/api/memories', memoryRoutes);
+app.use('/api/challenges', challengeRoutes);
+app.use('/api/location', locationRoutes);
 
-// Create HTTP server and attach Socket.IO
+// Socket.IO for live chat
 const server = http.createServer(app);
 const io = socketIo(server, {
-  cors: { origin: '*' } // For development only; restrict in production.
+  cors: { origin: '*' }
 });
 
-// Socket.IO event handling
 io.on('connection', (socket) => {
   console.log('New client connected: ' + socket.id);
 
   socket.on('chatMessage', (data) => {
-    console.log('Received message: ', data);
-    // Broadcast the message to all connected clients.
+    console.log('Received chat message: ', data);
+    // Broadcast the message to all connected clients
     io.emit('chatMessage', data);
   });
 

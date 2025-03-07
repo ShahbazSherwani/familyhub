@@ -1,23 +1,26 @@
-// screens/ChatScreen.js
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import { Card, Paragraph, Button, Title } from 'react-native-paper';
 import io from 'socket.io-client';
 import { AuthContext } from '../contexts/AuthContext';
 
-// Replace with your server IP if not running on the same machine
-const socket = io('http://localhost:5000');
+// Replace with your server IP or domain
+const SERVER_URL = 'http://localhost:5000';
+const socket = io(SERVER_URL);
 
 export default function ChatScreen() {
-  const { user } = useContext(AuthContext); // current logged-in user
+  const { user } = useContext(AuthContext); // Current logged-in user
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
 
   useEffect(() => {
-    socket.on('connect', () => {
-      console.log('Connected to chat server');
-    });
+    // 1) Fetch existing chat messages
+    fetch(`${SERVER_URL}/api/chat`)
+      .then((res) => res.json())
+      .then((data) => setMessages(data))
+      .catch((err) => console.error(err));
 
+    // 2) Listen for new messages via Socket.IO
     socket.on('chatMessage', (data) => {
       setMessages((prev) => [...prev, data]);
     });
@@ -27,32 +30,48 @@ export default function ChatScreen() {
     };
   }, []);
 
-  const sendMessage = () => {
-    if (newMessage.trim() === '') return;
+  const sendMessage = async () => {
+    if (!newMessage.trim()) return;
+    if (!user) {
+      alert('You must be logged in to chat');
+      return;
+    }
     const messageData = {
-      id: Date.now().toString(),
       text: newMessage,
-      userId: user ? user.id : 'unknown', // attach current user id
+      userId: user.id,
     };
+
+    // Emit for real-time
     socket.emit('chatMessage', messageData);
+
+    // Also persist on the server
+    try {
+      const res = await fetch(`${SERVER_URL}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(messageData),
+      });
+      if (!res.ok) {
+        console.error('Failed to store message');
+      }
+    } catch (err) {
+      console.error(err);
+    }
+
     setNewMessage('');
   };
 
-  // Render message with different styling for own vs. others
-  const renderMessage = (message) => {
-    const isOwn = user && message.userId === user.id;
+  const renderMessage = (msg) => {
+    const isOwn = user && msg.userId === user.id;
     return (
       <View
-        key={message.id}
-        style={[
-          styles.messageContainer,
-          isOwn ? styles.ownMessage : styles.receivedMessage,
-        ]}
+        key={msg._id}
+        style={[styles.messageContainer, isOwn ? styles.ownMessage : styles.receivedMessage]}
       >
         <Card style={[styles.card, isOwn ? styles.ownCard : styles.receivedCard]}>
           <Card.Content>
             <Paragraph style={isOwn ? styles.ownText : styles.receivedText}>
-              {message.text}
+              {msg.text}
             </Paragraph>
           </Card.Content>
         </Card>

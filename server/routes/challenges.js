@@ -1,3 +1,4 @@
+// routes/challenges.js
 const express = require('express');
 const router = express.Router();
 const Challenge = require('../models/Challenge');
@@ -27,7 +28,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-// PUT update a challenge (e.g., marking as complete)
+// PUT update a challenge (e.g., marking complete)
 router.put('/:id', async (req, res) => {
   try {
     const updatedChallenge = await Challenge.findByIdAndUpdate(req.params.id, req.body, { new: true });

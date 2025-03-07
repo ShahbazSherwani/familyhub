@@ -1,3 +1,4 @@
+// routes/location.js
 const express = require('express');
 const router = express.Router();
 const Location = require('../models/Location');
@@ -12,14 +13,13 @@ router.get('/', async (req, res) => {
   }
 });
 
-// POST add/update a location update
+// POST add/update a location
 router.post('/', async (req, res) => {
   const { userId, latitude, longitude } = req.body;
   if (!userId || latitude === undefined || longitude === undefined) {
     return res.status(400).json({ msg: 'Please provide userId, latitude, and longitude' });
   }
   try {
-    // For simplicity, create a new record each time. You could also update the latest record.
     const newLocation = new Location({ userId, latitude, longitude });
     await newLocation.save();
     res.json(newLocation);

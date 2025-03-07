@@ -1,8 +1,9 @@
+// routes/events.js
 const express = require('express');
 const router = express.Router();
 const Event = require('../models/Event');
 
-// GET all events (for all users)
+// GET all events
 router.get('/', async (req, res) => {
   try {
     const events = await Event.find().populate('createdBy', 'username email');

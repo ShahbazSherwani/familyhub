@@ -1,3 +1,4 @@
+// models/Memory.js
 const mongoose = require('mongoose');
 
 const MemorySchema = new mongoose.Schema({

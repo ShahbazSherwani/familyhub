@@ -1,34 +1,68 @@
-// screens/CalendarScreen.js
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { StyleSheet, Modal, TextInput, TouchableOpacity, FlatList, View } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { Button, Card, Title, Paragraph, IconButton } from 'react-native-paper';
 import { Feather } from '@expo/vector-icons';
+import { AuthContext } from '../contexts/AuthContext';
+
+// Replace with your deployed server URL or local IP
+const SERVER_URL = 'http://localhost:5000';
 
 export default function CalendarScreen({ navigation }) {
+  const { user } = useContext(AuthContext); // current logged-in user
   const [selectedDate, setSelectedDate] = useState('');
-  const [events, setEvents] = useState({
-    "2025-03-01": [{ title: "Farmers' Market", time: "10:00 AM" }],
-    "2025-03-05": [{ title: "Seed Distribution", time: "2:00 PM" }],
-    "2025-03-10": [{ title: "Investor Meeting", time: "3:00 PM" }],
-  });
+  const [events, setEvents] = useState([]); // We'll store array of events from server
   const [modalVisible, setModalVisible] = useState(false);
   const [newEventTitle, setNewEventTitle] = useState('');
   const [newEventTime, setNewEventTime] = useState('');
 
-  // Prepare marked dates for the calendar
-  const markedDates = Object.keys(events).reduce((acc, date) => {
-    acc[date] = { marked: true, dotColor: '#2196F3' };
+  // Fetch all events on mount
+  useEffect(() => {
+    fetch(`${SERVER_URL}/api/events`)
+      .then((res) => res.json())
+      .then((data) => setEvents(data))
+      .catch((err) => console.error(err));
+  }, []);
+
+  // Convert events array into markedDates object for react-native-calendars
+  const markedDates = events.reduce((acc, event) => {
+    // event.date is something like "2025-03-27"
+    acc[event.date] = { marked: true, dotColor: '#2196F3' };
     return acc;
   }, {});
 
-  const addEvent = () => {
+  const getEventsForDate = (date) => {
+    return events.filter((ev) => ev.date === date);
+  };
+
+  const addEvent = async () => {
     if (!newEventTitle.trim() || !newEventTime.trim()) return;
-    const event = { title: newEventTitle, time: newEventTime };
-    setEvents(prevEvents => {
-      const dayEvents = prevEvents[selectedDate] || [];
-      return { ...prevEvents, [selectedDate]: [...dayEvents, event] };
-    });
+    if (!user) {
+      alert('You must be logged in to add events');
+      return;
+    }
+    const eventData = {
+      title: newEventTitle,
+      time: newEventTime,
+      date: selectedDate,
+      createdBy: user.id,
+    };
+    try {
+      const res = await fetch(`${SERVER_URL}/api/events`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(eventData),
+      });
+      if (res.ok) {
+        const newEvent = await res.json();
+        // Add to local state so we see it right away
+        setEvents((prev) => [...prev, newEvent]);
+      } else {
+        console.error('Error adding event');
+      }
+    } catch (err) {
+      console.error(err);
+    }
     setNewEventTitle('');
     setNewEventTime('');
     setModalVisible(false);
@@ -45,7 +79,7 @@ export default function CalendarScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* Custom header */}
+      {/* Custom header with Profile & Settings icons */}
       <View style={styles.customHeader}>
         <IconButton
           icon={() => <Feather name="user" size={24} color="#000" />}
@@ -58,7 +92,6 @@ export default function CalendarScreen({ navigation }) {
         />
       </View>
       
-      {/* Calendar with a top margin to avoid header overlap */}
       <Calendar
         onDayPress={(day) => {
           setSelectedDate(day.dateString);
@@ -70,25 +103,21 @@ export default function CalendarScreen({ navigation }) {
           selectedDayBackgroundColor: '#2196F3',
           arrowColor: '#2196F3',
         }}
-        style={{ marginTop: 60 }} 
+        style={{ marginTop: 60 }}
       />
 
       {selectedDate !== '' && (
         <View style={styles.eventContainer}>
           <Title>Events on {selectedDate}</Title>
-          {events[selectedDate] ? (
-            <FlatList
-              data={events[selectedDate]}
-              keyExtractor={(item, index) => index.toString()}
-              renderItem={renderEventItem}
-            />
-          ) : (
-            <Paragraph>No events for this date.</Paragraph>
-          )}
+          <FlatList
+            data={getEventsForDate(selectedDate)}
+            keyExtractor={(item, index) => index.toString()}
+            renderItem={renderEventItem}
+            ListEmptyComponent={<Paragraph>No events for this date.</Paragraph>}
+          />
         </View>
       )}
 
-      {/* Modal to add an event */}
       <Modal visible={modalVisible} transparent animationType="slide">
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
@@ -162,3 +191,4 @@ const styles = StyleSheet.create({
   modalButton: { marginTop: 10 },
   closeText: { marginTop: 10, color: 'red', textAlign: 'right' },
 });
+

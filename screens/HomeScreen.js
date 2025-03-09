@@ -1,17 +1,19 @@
 // screens/HomeScreen.js
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Title, Paragraph } from 'react-native-paper';
+import { View, Text, StyleSheet } from 'react-native';
+import AnimatedScreen from '../components/AnimatedScreen';
 
 export default function HomeScreen() {
   return (
-    <View style={styles.container}>
-      <Title>Family Hub Home</Title>
-      <Paragraph>Welcome to your family management app!</Paragraph>
-    </View>
+    <AnimatedScreen>
+      <View style={styles.container}>
+        <Text style={styles.text}>Welcome to Family Hub Home</Text>
+      </View>
+    </AnimatedScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 16 },
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' },
+  text: { fontSize: 18 },
 });

@@ -2,27 +2,25 @@ import React, { useState, useEffect, useContext } from 'react';
 import { StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import { Card, Paragraph, Button, Title } from 'react-native-paper';
 import io from 'socket.io-client';
+import * as Animatable from 'react-native-animatable';
 import { AuthContext } from '../contexts/AuthContext';
 
-// Replace with your server IP or domain
 const SERVER_URL = 'http://localhost:5000';
 const socket = io(SERVER_URL);
 
 export default function ChatScreen() {
-  const { user } = useContext(AuthContext); // Current logged-in user
+  const { user } = useContext(AuthContext);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
 
   useEffect(() => {
-    // 1) Fetch existing chat messages
     fetch(`${SERVER_URL}/api/chat`)
-      .then((res) => res.json())
-      .then((data) => setMessages(data))
-      .catch((err) => console.error(err));
+      .then(res => res.json())
+      .then(data => setMessages(data))
+      .catch(err => console.error(err));
 
-    // 2) Listen for new messages via Socket.IO
-    socket.on('chatMessage', (data) => {
-      setMessages((prev) => [...prev, data]);
+    socket.on('chatMessage', data => {
+      setMessages(prev => [...prev, data]);
     });
 
     return () => {
@@ -41,10 +39,8 @@ export default function ChatScreen() {
       userId: user.id,
     };
 
-    // Emit for real-time
     socket.emit('chatMessage', messageData);
 
-    // Also persist on the server
     try {
       const res = await fetch(`${SERVER_URL}/api/chat`, {
         method: 'POST',
@@ -57,24 +53,26 @@ export default function ChatScreen() {
     } catch (err) {
       console.error(err);
     }
-
     setNewMessage('');
   };
 
-  const renderMessage = (msg) => {
+  const renderMessage = (msg, index) => {
     const isOwn = user && msg.userId === user.id;
+    const key = msg._id ? msg._id : index.toString();
     return (
       <View
-        key={msg._id}
+        key={key}
         style={[styles.messageContainer, isOwn ? styles.ownMessage : styles.receivedMessage]}
       >
-        <Card style={[styles.card, isOwn ? styles.ownCard : styles.receivedCard]}>
-          <Card.Content>
-            <Paragraph style={isOwn ? styles.ownText : styles.receivedText}>
-              {msg.text}
-            </Paragraph>
-          </Card.Content>
-        </Card>
+        <Animatable.View animation="fadeIn" duration={300}>
+          <Card style={[styles.card, isOwn ? styles.ownCard : styles.receivedCard]}>
+            <Card.Content>
+              <Paragraph style={isOwn ? styles.ownText : styles.receivedText}>
+                {msg.text}
+              </Paragraph>
+            </Card.Content>
+          </Card>
+        </Animatable.View>
       </View>
     );
   };
@@ -83,7 +81,7 @@ export default function ChatScreen() {
     <View style={styles.container}>
       <Title style={styles.header}>Live Chat</Title>
       <View style={styles.messagesContainer}>
-        {messages.map(renderMessage)}
+        {messages.map((msg, index) => renderMessage(msg, index))}
       </View>
       <View style={styles.inputContainer}>
         <TextInput

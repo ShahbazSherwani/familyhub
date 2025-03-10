@@ -6,7 +6,7 @@ const cors = require('cors');
 const http = require('http');
 const socketIo = require('socket.io');
 
-// Route imports
+// Import your routes
 const authRoutes = require('./routes/auth');
 const eventRoutes = require('./routes/events');
 const memoryRoutes = require('./routes/memories');
@@ -20,13 +20,18 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Minimal root route so hitting '/' won't 404
+app.get('/', (req, res) => {
+  res.send('Hello from Family Hub server!');
+});
+
 // Connect to MongoDB
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB connected'))
   .catch((err) => console.error('MongoDB connection error:', err));
 
-// API Routes
+// Use your routes
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/memories', memoryRoutes);
@@ -34,10 +39,10 @@ app.use('/api/challenges', challengeRoutes);
 app.use('/api/location', locationRoutes);
 app.use('/api/chat', chatRoutes);
 
-// Create HTTP server and attach Socket.IO
+// Create HTTP server & attach Socket.IO
 const server = http.createServer(app);
 const io = socketIo(server, {
-  cors: { origin: '*' } // In production, restrict origins
+  cors: { origin: '*' }
 });
 
 // Socket.IO handling for chat
@@ -46,7 +51,6 @@ io.on('connection', (socket) => {
 
   socket.on('chatMessage', (data) => {
     console.log('Received chat message:', data);
-    // Broadcast the message to all connected clients
     io.emit('chatMessage', data);
   });
 
@@ -55,7 +59,7 @@ io.on('connection', (socket) => {
   });
 });
 
-// For local development: run server.listen only if we're executing server.js directly
+// For local dev: only listen if we run `node server.js`
 if (require.main === module) {
   const PORT = process.env.PORT || 5000;
   server.listen(PORT, () => console.log(`Server started on port ${PORT}`));

@@ -34,7 +34,7 @@ app.use('/api/challenges', challengeRoutes);
 app.use('/api/location', locationRoutes);
 app.use('/api/chat', chatRoutes);
 
-// Create HTTP server and attach Socket.IO for live chat
+// Create HTTP server and attach Socket.IO
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: { origin: '*' } // In production, restrict origins
@@ -55,5 +55,11 @@ io.on('connection', (socket) => {
   });
 });
 
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+// For local development: run server.listen only if we're executing server.js directly
+if (require.main === module) {
+  const PORT = process.env.PORT || 5000;
+  server.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+}
+
+// Export the server for Vercel
+module.exports = server;

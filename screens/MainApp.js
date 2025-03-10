@@ -1,7 +1,9 @@
 // screens/MainApp.js
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Feather } from '@expo/vector-icons';
+import AnimatedScreen from '../components/AnimatedScreen';
+import AnimatedIcon from '../components/AnimatedIcon';
+import AnimatedTabBarButton from '../components/AnimatedTabBarButton';
 import HomeScreen from './HomeScreen';
 import CalendarScreen from './CalendarScreen';
 import ChatScreen from './ChatScreen';
@@ -15,6 +17,9 @@ export default function MainApp() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
+        headerShown: false,
+        // Instead of wrapping the icon in our custom Pressable inside tabBarIcon,
+        // we now supply a custom tabBarButton that wraps the default rendering.
         tabBarIcon: ({ color, size }) => {
           let iconName;
           switch (route.name) {
@@ -39,16 +44,53 @@ export default function MainApp() {
             default:
               iconName = 'circle';
           }
-          return <Feather name={iconName} size={size} color={color} />;
+          return <AnimatedIcon name={iconName} size={size} color={color} />;
         },
+        tabBarButton: (props) => <AnimatedTabBarButton {...props} />,
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Calendar" component={CalendarScreen} />
-      <Tab.Screen name="Chat" component={ChatScreen} />
-      <Tab.Screen name="Memories" component={MemoryJournalScreen} />
-      <Tab.Screen name="Challenges" component={ChallengesScreen} />
-      <Tab.Screen name="Safety" component={SafetyScreen} />
+      <Tab.Screen name="Home">
+        {(props) => (
+          <AnimatedScreen>
+            <HomeScreen {...props} />
+          </AnimatedScreen>
+        )}
+      </Tab.Screen>
+      <Tab.Screen name="Calendar">
+        {(props) => (
+          <AnimatedScreen>
+            <CalendarScreen {...props} />
+          </AnimatedScreen>
+        )}
+      </Tab.Screen>
+      <Tab.Screen name="Chat">
+        {(props) => (
+          <AnimatedScreen>
+            <ChatScreen {...props} />
+          </AnimatedScreen>
+        )}
+      </Tab.Screen>
+      <Tab.Screen name="Memories">
+        {(props) => (
+          <AnimatedScreen>
+            <MemoryJournalScreen {...props} />
+          </AnimatedScreen>
+        )}
+      </Tab.Screen>
+      <Tab.Screen name="Challenges">
+        {(props) => (
+          <AnimatedScreen>
+            <ChallengesScreen {...props} />
+          </AnimatedScreen>
+        )}
+      </Tab.Screen>
+      <Tab.Screen name="Safety">
+        {(props) => (
+          <AnimatedScreen>
+            <SafetyScreen {...props} />
+          </AnimatedScreen>
+        )}
+      </Tab.Screen>
     </Tab.Navigator>
   );
 }
